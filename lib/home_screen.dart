@@ -11,6 +11,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final GenerativeModel generativeModel;
+  final FocusNode focusNode=FocusNode();
+  final TextEditingController textEditingController=TextEditingController();
   late final ChatSession chatSession;
 
   @override
@@ -36,7 +38,17 @@ class _HomeScreenState extends State<HomeScreen> {
             final  Content content=chatSession.history.toList()[index];
             final text=content.parts.whereType().map((e) => e.text).join('');
             return MessageWidget(text: text, isFromUser: content.role=="user");
-          }))
+          })),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15,vertical: 25),
+            child: Row(
+              children: [
+                Expanded(child: TextField(autofocus: true,focusNode: ,decoration: ,controller: ,onSubmitted: ,,)),
+                const SizedBox(height: 15,),
+              ],
+            ),
+          )
         ],
       )
     );
