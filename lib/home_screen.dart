@@ -102,5 +102,20 @@ try{
   });
 }
   }
+void showError(String message){
+    showDialog(context: context, builder: (context){
+      return AlertDialog(
+        title: Text("Something went wrong"),
+        content: SingleChildScrollView(
+          child: SelectableText(message),
 
+        ),
+        actions: [
+          TextButton(onPressed: (){
+            Navigator.of(context).pop();
+          }, child: Text("OK"))
+        ],
+      );
+    });
+}
 }
