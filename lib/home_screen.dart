@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gemini_ai_app/message_widget.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -31,7 +32,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body:Column(
         children: [
-          Expanded(child: ListView.builder(itemBuilder: (context,index){}))
+          Expanded(child: ListView.builder(itemBuilder: (context,index){
+            final  Content content=chatSession.history.toList()[index];
+            final text=content.parts.whereType().map((e) => e.text).join('');
+            return MessageWidget(text: text, isFromUser: content.role=="user");
+          }))
         ],
       )
     );
