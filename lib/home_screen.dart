@@ -1,125 +1,174 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:gemini_ai_app/message_widget.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
 
-class HomeScreen extends StatefulWidget {
-  HomeScreen({super.key});
-
+class GeminiChat extends StatefulWidget {
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  _GeminiChatState createState() => _GeminiChatState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  late final GenerativeModel generativeModel;
-  final FocusNode focusNode=FocusNode();
-  final TextEditingController textEditingController=TextEditingController();
-  final ScrollController scrollController=ScrollController();
-  late final ChatSession chatSession;
-bool loading=false;
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    generativeModel = GenerativeModel(
-        model: "gemini-pro",
-        apiKey:
-            String.fromEnvironment("AIzaSyBus26RFWTNyLLPsGpHZEFXKjzS59YSPXg"));
-    chatSession=generativeModel.startChat();
+class _GeminiChatState extends State<GeminiChat> {
+  List<Map<String, String>> messages = []; // Store prompt-response pairs
+  TextEditingController _controller = TextEditingController(); // Controller for the TextField
+
+  // Function to call the Gemini API
+// Function to call the Gemini API with logging for response structure
+// Function to call the Gemini API with the correct response parsing
+
+// Function to clean up the AI response
+  String cleanResponse(String response) {
+    // Remove Markdown-like formatting characters such as '**' for bold
+    return response.replaceAll(RegExp(r'\*\*|[_*]',), '').trim();
+  }
+
+// Function to call the Gemini API with the correct response parsing
+  Future<void> callGeminiAPI(String prompt) async {
+    const String apiUrl =
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyDINM_iKvnR4RzkjQ6Rde2IcUIfhLJGn4w'; // Replace with your API Key
+
+    // The request body
+    final Map<String, dynamic> requestBody = {
+      "contents": [
+        {
+          "parts": [
+            {
+              "text": prompt // Prompt to be sent to the API
+            }
+          ]
+        }
+      ]
+    };
+
+    try {
+      // Make the POST request
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        // Log the raw response body for debugging
+        print('Raw Response: ${response.body}');
+
+        // Parse the response body
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+        // Check if 'candidates' exists and has content
+        if (responseData.containsKey('candidates') && responseData['candidates'] is List) {
+          final candidates = responseData['candidates'];
+          if (candidates.isNotEmpty &&
+              candidates[0].containsKey('content') &&
+              candidates[0]['content'].containsKey('parts')) {
+            final rawResponse = candidates[0]['content']['parts'][0]['text'] ?? 'No response';
+            final aiResponse = cleanResponse(rawResponse); // Clean up the response
+
+            setState(() {
+              messages.add({'user': prompt, 'ai': aiResponse}); // Add prompt and response to the list
+            });
+          } else {
+            setState(() {
+              messages.add({'user': prompt, 'ai': 'No valid response from AI'});
+            });
+          }
+        } else {
+          setState(() {
+            messages.add({'user': prompt, 'ai': 'Invalid response structure'});
+          });
+        }
+      } else {
+        setState(() {
+          messages.add({'user': prompt, 'ai': 'Error: Failed with status code ${response.statusCode}'});
+        });
+      }
+    } catch (error) {
+      setState(() {
+        messages.add({'user': prompt, 'ai': 'Error: $error'}); // Handle any errors
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:  Text("build with gemini"),
+        title: Text('Gemini AI Chat'),
       ),
-      body:Column(
+      body: Column(
         children: [
-          Expanded(child: ListView.builder(controller: scrollController,itemCount: chatSession.history.length,itemBuilder: (context,index){
-            final  Content content=chatSession.history.toList()[index];
-            final text=content.parts.whereType().map((e) => e.text).join('');
-            return MessageWidget(text: text, isFromUser: content.role=="user");
-          })),
-
+          Expanded(
+            child: ListView.builder(
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                final message = messages[index];
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Container(
+                        padding: EdgeInsets.all(12),
+                        margin: EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          message['user']!,
+                          style: TextStyle(color: Colors.black, fontSize: 16),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: EdgeInsets.all(12),
+                        margin: EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.green[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          message['ai']!,
+                          style: TextStyle(color: Colors.black, fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15,vertical: 25),
+            padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                Expanded(child: TextField(autofocus: true,focusNode: focusNode,decoration: inputDecoration(),controller:textEditingController ,onSubmitted: sendChatMessage,)),
-                const SizedBox(height: 15,),
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      hintText: 'Enter your prompt...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.send),
+                  onPressed: () {
+                    final prompt = _controller.text;
+                    if (prompt.isNotEmpty) {
+                      callGeminiAPI(prompt); // Send the prompt to the API
+                      _controller.clear(); // Clear the text field
+                    }
+                  },
+                ),
               ],
             ),
-          )
+          ),
         ],
-      )
+      ),
     );
   }
-  InputDecoration inputDecoration (){
-    return InputDecoration(
-      contentPadding: EdgeInsets.all(15),
-      hintText: "Enter a prompt ...",
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(14)),
-        borderSide: BorderSide(color: Theme.of(context).colorScheme.secondary),
-
-      ),
-
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(14)),
-        borderSide: BorderSide(
-          color: Theme.of(context).colorScheme.secondary
-        )
-      ),
-
-    );
-  }
-  Future<void>sendChatMessage(String message)async{
-    setState(() {
-      loading=true;
-
-    });
-try{
-  final response=await chatSession.sendMessage(Content.text(message));
-  final text=response.text;
-  if(text==null){
-    showError('No response from ApI.');
-    return ;
-  }else{
-    setState(() {
-       loading=false;
-       scrollDown();
-    });
-  }
-}catch(e){
-  showError(e.toString());
-  setState(() {
-    loading=false;
-  });
-}finally{
-  textEditingController.clear();
-  setState(() {
-    loading=false;
-    focusNode.requestFocus();
-  });
-}
-  }
-  void scrollDown(){
-    WidgetsBinding.instance.addPostFrameCallback((_) =>scrollController.animateTo(scrollController.position.maxScrollExtent, duration: Duration(milliseconds: 750), curve: Curves.easeOutCirc));
-  }
-void showError(String message){
-    showDialog(context: context, builder: (context){
-      return AlertDialog(
-        title: Text("Something went wrong"),
-        content: SingleChildScrollView(
-          child: SelectableText(message),
-
-        ),
-        actions: [
-          TextButton(onPressed: (){
-            Navigator.of(context).pop();
-          }, child: Text("OK"))
-        ],
-      );
-    });
-}
 }
