@@ -13,6 +13,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late final GenerativeModel generativeModel;
   final FocusNode focusNode=FocusNode();
   final TextEditingController textEditingController=TextEditingController();
+  final ScrollController scrollController=ScrollController();
   late final ChatSession chatSession;
 bool loading=false;
   @override
@@ -44,7 +45,7 @@ bool loading=false;
             padding: const EdgeInsets.symmetric(horizontal: 15,vertical: 25),
             child: Row(
               children: [
-                Expanded(child: TextField(autofocus: true,focusNode: focusNode,decoration: inputDecoration(),controller:textEditingController ,onSubmitted: ,,)),
+                Expanded(child: TextField(autofocus: true,focusNode: focusNode,decoration: inputDecoration(),controller:textEditingController ,onSubmitted: sendChatMessage,)),
                 const SizedBox(height: 15,),
               ],
             ),
@@ -101,6 +102,9 @@ try{
     focusNode.requestFocus();
   });
 }
+  }
+  void scrollDown(){
+    WidgetsBinding.instance.addPostFrameCallback((_) =>scrollController.animateTo(scrollController.position.maxScrollExtent, duration: Duration(milliseconds: 750), curve: Curves.easeOutCirc));
   }
 void showError(String message){
     showDialog(context: context, builder: (context){
