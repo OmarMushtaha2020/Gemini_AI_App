@@ -26,7 +26,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox(),
+      appBar: AppBar(
+        title:  Text("build with gemini"),
+      ),
+      body:Column(
+        children: [
+          Expanded(child: ListView.builder(itemBuilder: (context,index){}))
+        ],
+      )
     );
   }
 }
