@@ -53,4 +53,23 @@ class _HomeScreenState extends State<HomeScreen> {
       )
     );
   }
+  InputDecoration inputDecoration (){
+    return InputDecoration(
+      contentPadding: EdgeInsets.all(15),
+      hintText: "Enter a prompt ...",
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(14)),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.secondary),
+
+      ),
+
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(14)),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.secondary
+        )
+      ),
+
+    );
+  }
 }
