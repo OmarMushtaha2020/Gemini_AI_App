@@ -23,7 +23,7 @@ bool loading=false;
     generativeModel = GenerativeModel(
         model: "gemini-pro",
         apiKey:
-            String.fromEnvironment("AIzaSyBgV695z-ckb6s23P0pDebgBOzCAkmrZ2Q"));
+            String.fromEnvironment("AIzaSyBus26RFWTNyLLPsGpHZEFXKjzS59YSPXg"));
     chatSession=generativeModel.startChat();
   }
 
@@ -35,7 +35,7 @@ bool loading=false;
       ),
       body:Column(
         children: [
-          Expanded(child: ListView.builder(itemBuilder: (context,index){
+          Expanded(child: ListView.builder(controller: scrollController,itemCount: chatSession.history.length,itemBuilder: (context,index){
             final  Content content=chatSession.history.toList()[index];
             final text=content.parts.whereType().map((e) => e.text).join('');
             return MessageWidget(text: text, isFromUser: content.role=="user");
