@@ -14,7 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final FocusNode focusNode=FocusNode();
   final TextEditingController textEditingController=TextEditingController();
   late final ChatSession chatSession;
-
+bool loading=false;
   @override
   void initState() {
     // TODO: implement initState
@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 15,vertical: 25),
             child: Row(
               children: [
-                Expanded(child: TextField(autofocus: true,focusNode: ,decoration: ,controller: ,onSubmitted: ,,)),
+                Expanded(child: TextField(autofocus: true,focusNode: focusNode,decoration: inputDecoration(),controller:textEditingController ,onSubmitted: ,,)),
                 const SizedBox(height: 15,),
               ],
             ),
@@ -72,4 +72,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
     );
   }
+  Future<void>sendChatMessage(String message)async{
+    setState(() {
+      loading=true;
+
+    });
+try{
+  final response=await chatSession.sendMessage(Content.text(message));
+  final text=response.text;
+  if(text==null){
+    showError('No response from ApI.');
+    return ;
+  }else{
+    setState(() {
+       loading=false;
+       scrollDown();
+    });
+  }
+}catch(e){
+  showError(e.toString());
+  setState(() {
+    loading=false;
+  });
+}finally{
+  textEditingController.clear();
+  setState(() {
+    loading=false;
+    focusNode.requestFocus();
+  });
+}
+  }
+
 }
